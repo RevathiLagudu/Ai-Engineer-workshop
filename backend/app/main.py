@@ -34,7 +34,11 @@ def analyze(request: IngestionRequest):
         raise HTTPException(status_code=422, detail="Message cannot be empty.")
 
     try:
-        result = analyze_message(message)
+        history = [
+    item.model_dump()
+    for item in request.history
+]
+        result = analyze_message(message, history)
         # Add a local estimate for context budgeting. Provider-reported token
         # counts may differ; this is not billed-usage accounting.
         result.token_metadata.estimated_input_tokens = estimate_tokens(message)

@@ -1,0 +1,79 @@
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f4f6fb;
+  color: #172033;
+  font-family: Arial, sans-serif;
+}
+
+.app {
+  max-width: 850px;
+  margin: 40px auto;
+  padding: 24px;
+}
+
+header, form, .response {
+  background: white;
+  padding: 24px;
+  margin-bottom: 20px;
+  border-radius: 14px;
+  border: 1px solid #e0e5ef;
+}
+
+textarea {
+  display: block;
+  width: 100%;
+  min-height: 120px;
+  margin: 10px 0 16px;
+  padding: 12px;
+  font: inherit;
+  border: 1px solid #cbd2e1;
+  border-radius: 8px;
+}
+
+button {
+  margin: 4px 8px 4px 0;
+  padding: 11px 16px;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #4f46e5;
+  color: white;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.markdown {
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.markdown pre {
+  padding: 14px;
+  overflow-x: auto;
+  background: #f0f2f7;
+  border-radius: 8px;
+}
+
+.markdown table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.markdown th,
+.markdown td {
+  border: 1px solid #d9deea;
+  padding: 8px;
+  text-align: left;
+}
+
+.error {
+  color: #b42318;
+}

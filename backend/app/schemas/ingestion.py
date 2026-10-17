@@ -14,16 +14,16 @@ Intent = Literal[
 RiskProfile = Literal["low", "medium", "high", "unknown"]
 Priority = Literal["low", "medium", "high"]
 
+class ChatMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(min_length=1, max_length=5000)
+
 
 class IngestionRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    message: str = Field(
-        min_length=1,
-        max_length=5000,
-        description="The user's original message.",
-        examples=["Where is my order?"],
-    )
+    message: str = Field(min_length=1, max_length=5000)
+    history: list[ChatMessage] = Field(default_factory=list, max_length=10)
 
     @field_validator("message")
     @classmethod
@@ -47,4 +47,9 @@ class IngestionResult(BaseModel):
     priority: Priority
     requires_action: bool
     summary: str = Field(min_length=1, max_length=500)
+    response_markdown: str = Field(
+        min_length=1,
+        max_length=10000,
+        description="A helpful user-facing response formatted as Markdown."
+    )
     token_metadata: TokenMetadata = Field(default_factory=TokenMetadata)
