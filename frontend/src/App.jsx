@@ -1,36 +1,32 @@
-
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import "./App.css";
 
-const API_URL = "http://127.0.0.1:8000";
-
 export default function App() {
   const [message, setMessage] = useState("");
-  const [history, setHistory] = useState([]);
-  const [result, setResult] = useState(null);
+  const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  async function sendMessage(event) {
-    event.preventDefault();
-
-    const text = message.trim();
-    if (!text || loading) return;
+  async function sendMessage(text = message) {
+    if (!text.trim() || loading) return;
 
     setLoading(true);
     setError("");
 
     try {
-      const response = await fetch(`${API_URL}/api/analyze`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: text,
-          history: history.slice(-10),
-        }),
-      });
+      const response = await fetch(
+        "http://127.0.0.1:8000/api/analyze",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: text,
+            history: [],
+          }),
+        }
+      );
 
       const data = await response.json();
 
@@ -38,80 +34,120 @@ export default function App() {
         throw new Error(
           typeof data.detail === "string"
             ? data.detail
-            : "The backend could not process this message."
+            : "The request failed."
         );
       }
 
-      setResult(data);
-
-      setHistory((previous) => [
-        ...previous,
-        { role: "user", content: text },
-        { role: "assistant", content: data.response_markdown },
-      ].slice(-10));
-
+      setAnswer(data.response_markdown || "No response was returned.");
       setMessage("");
     } catch (err) {
-      setError(err.message || "Could not connect to the backend.");
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   }
 
-  function resetConversation() {
-    setHistory([]);
-    setResult(null);
-    setError("");
-  }
-
   return (
-    <main className="app">
-      <header>
-        <h1>AI Support Assistant</h1>
-        <p>Ask a question and receive a context-aware AI response.</p>
-      </header>
-
-      <form onSubmit={sendMessage}>
-        <label htmlFor="message">Your message</label>
-        <textarea
-          id="message"
-          value={message}
-          onChange={(event) => setMessage(event.target.value)}
-          placeholder="Example: My payment was deducted twice."
-          maxLength={5000}
-          required
-        />
-
-        <button type="submit" disabled={loading || !message.trim()}>
-          {loading ? "Generating response..." : "Send message"}
-        </button>
-
-        <button type="button" onClick={resetConversation}>
-          New conversation
-        </button>
-      </form>
-
-      {error && <p role="alert" className="error">{error}</p>}
-
-      {result && (
-        <section className="response">
-          <h2>AI Response</h2>
-
-          <div className="markdown">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {result.response_markdown}
-            </ReactMarkdown>
+    <div className="app">
+      <aside className="sidebar">
+        <div className="brand">
+          <div className="brand-icon">✦</div>
+          <div>
+            <h2>AI Assistant</h2>
+            <p>Get help with your queries</p>
           </div>
+        </div>
 
-          <details>
-            <summary>Intent analysis</summary>
-            <p><strong>Intent:</strong> {result.intent}</p>
-            <p><strong>Risk:</strong> {result.risk_profile}</p>
-            <p><strong>Priority:</strong> {result.priority}</p>
-            <p><strong>Summary:</strong> {result.summary}</p>
-          </details>
+        <button className="new-chat" onClick={() => {
+          setAnswer("");
+          setError("");
+          setMessage("");
+        }}>
+          ＋ New Chat
+        </button>
+
+        <div className="sidebar-section">
+          <h3>Suggested Prompts</h3>
+          {[
+            "My payment was deducted twice. What should I do?",
+            "How can I reset my password?",
+            "I want to check my order status.",
+            "What are your refund policies?",
+            "How do I contact customer support?",
+          ].map((prompt) => (
+            <button
+              className="suggestion"
+              key={prompt}
+              onClick={() => sendMessage(prompt)}
+              disabled={loading}
+            >
+              {prompt}
+            </button>
+          ))}
+        </div>
+
+        <div className="backend-status">
+          <span className="status-dot" />
+          <div>
+            <strong>FastAPI + Groq</strong>
+            <p>AI Support Assistant</p>
+          </div>
+        </div>
+      </aside>
+
+      <main className="chat-panel">
+        <header className="chat-header">
+          <h2>New Chat</h2>
+        </header>
+
+        <section className="chat-messages">
+          {!answer && !loading && (
+            <div className="welcome">
+              <div className="welcome-icon">✦</div>
+              <h1>How can I help you?</h1>
+              <p>Ask a question to get started.</p>
+            </div>
+          )}
+
+          {loading && <p>AI is thinking...</p>}
+
+          {answer && (
+            <div className="assistant-message">
+              <div className="assistant-label">✦ AI Assistant</div>
+              <div className="assistant-content">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {answer}
+                </ReactMarkdown>
+              </div>
+            </div>
+          )}
         </section>
-      )}
-    </main>
+
+        {error && <div className="error-message">{error}</div>}
+
+        <form
+          className="chat-form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            sendMessage();
+          }}
+        >
+          <textarea
+            value={message}
+            onChange={(event) => setMessage(event.target.value)}
+            placeholder="Type your message..."
+            rows={1}
+            required
+          />
+          <button type="submit" disabled={loading}>
+            ➤
+          </button>
+        </form>
+
+        <p className="disclaimer">
+          AI-generated responses may not always be accurate.
+        </p>
+      </main>
+    </div>
   );
 }

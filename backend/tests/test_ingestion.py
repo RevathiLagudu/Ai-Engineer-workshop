@@ -31,8 +31,11 @@ def test_result_accepts_valid_data():
         priority="low",
         requires_action=False,
         summary="The user greeted the assistant.",
-        response_markdown="# Hello!\n\nHow can I help you?",
     )
 
     assert result.intent == "greeting"
-    assert result.response_markdown == "# Hello!\n\nHow can I help you?"
+    assert result.risk_profile == "low"
+    assert result.priority == "low"
+    assert result.requires_action is False
+    assert result.summary == "The user greeted the assistant."
+    assert result.token_metadata.estimated_input_tokens == 0

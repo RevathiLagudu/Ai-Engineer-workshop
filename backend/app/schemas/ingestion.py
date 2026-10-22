@@ -47,9 +47,4 @@ class IngestionResult(BaseModel):
     priority: Priority
     requires_action: bool
     summary: str = Field(min_length=1, max_length=500)
-    response_markdown: str = Field(
-        min_length=1,
-        max_length=10000,
-        description="A helpful user-facing response formatted as Markdown."
-    )
     token_metadata: TokenMetadata = Field(default_factory=TokenMetadata)

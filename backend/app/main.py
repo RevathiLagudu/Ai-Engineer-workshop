@@ -3,7 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, ValidationError
 
 from app.schemas.ingestion import IngestionRequest, IngestionResult
+from app.schemas.assistant import AssistantResult
 from app.services.llm_service import analyze_message
+from app.services.response_service import generate_response
 from app.utils.token_counter import estimate_tokens
 
 app = FastAPI(
@@ -27,7 +29,7 @@ def health_check():
     return {"status": "ok", "message": "Ingestion Firewall API is running"}
 
 
-@app.post("/api/analyze", response_model=IngestionResult)
+@app.post("/api/analyze", response_model=AssistantResult)
 def analyze(request: IngestionRequest):
     message = request.message.strip()
     if not message:
@@ -38,11 +40,21 @@ def analyze(request: IngestionRequest):
     item.model_dump()
     for item in request.history
 ]
+        #week1 : Detect user intent
         result = analyze_message(message, history)
         # Add a local estimate for context budgeting. Provider-reported token
         # counts may differ; this is not billed-usage accounting.
         result.token_metadata.estimated_input_tokens = estimate_tokens(message)
-        return result
+        
+        # Week 2: Generate an answer using the detected intent
+        response_markdown = generate_response(result)
+
+        # Return intent details + generated answer
+        return AssistantResult(
+            **result.model_dump(),
+            response_markdown=response_markdown,
+        )
+    
     except ValidationError as exc:
         raise HTTPException(
             status_code=502,
@@ -51,6 +63,7 @@ def analyze(request: IngestionRequest):
                 "validation_errors": exc.errors(),
             },
         ) from exc
+         
     except Exception as exc:
         # Keep the response simple; avoid exposing secrets or internal details.
         raise HTTPException(
