@@ -25,40 +25,41 @@ Rules:
 """.strip()
 
 
-def generate_response(ingestion_result: IngestionResult) -> str:
+def generate_response(
+    intent_result: IngestionResult,
+    history: list[dict[str, str]] | None = None,
+    current_message: str | None = None,
+) -> str:
+    """Generate an answer using structured intent and recent chat history."""
     if not GROQ_API_KEY:
-        raise RuntimeError(
-            "GROQ_API_KEY is missing. Add it to backend/.env."
-        )
+        raise RuntimeError("GROQ_API_KEY is missing. Add it to backend/.env.")
 
     intent_context = {
-        "intent": ingestion_result.intent,
-        "summary": ingestion_result.summary,
-        "risk_profile": ingestion_result.risk_profile,
-        "priority": ingestion_result.priority,
-        "requires_action": ingestion_result.requires_action,
+        "intent": intent_result.intent,
+        "summary": intent_result.summary,
+        "risk_profile": intent_result.risk_profile,
+        "priority": intent_result.priority,
+        "requires_action": intent_result.requires_action,
     }
+    messages = [{"role": "system", "content": RESPONSE_SYSTEM_PROMPT}]
+    messages.extend(history or [])
+    messages.append({
+        "role": "user",
+        "content": (
+            "Current message:\n"
+            f"{current_message or intent_result.summary}\n\n"
+            "Current intent analysis (JSON):\n"
+            f"{json.dumps(intent_context, ensure_ascii=False)}"
+        ),
+    })
 
     client = Groq(api_key=GROQ_API_KEY)
 
     completion = client.chat.completions.create(
         model=GROQ_MODEL,
         temperature=0.3,
-        max_tokens=1000,
-        messages=[
-            {
-                "role": "system",
-                "content": RESPONSE_SYSTEM_PROMPT,
-            },
-            {
-                "role": "user",
-                "content": (
-                    "Create a helpful Markdown response using "
-                    "this intent analysis:\n"
-                    f"{json.dumps(intent_context, ensure_ascii=False)}"
-                ),
-            },
-        ],
+        max_tokens=1200,
+        messages=messages,
     )
 
     answer = completion.choices[0].message.content

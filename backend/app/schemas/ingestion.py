@@ -22,9 +22,20 @@ class ChatMessage(BaseModel):
 class IngestionRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    message: str = Field(min_length=1, max_length=5000)
-    history: list[ChatMessage] = Field(default_factory=list, max_length=10)
+    session_id:str | None =Field(
+        default=None,
+        min_length=1,
+        max_length=100,
+        description="optional conversation session identifier"
+    )
 
+    message: str = Field(
+        min_length=1,
+        max_length=5000,
+        description="The user's original message.",
+        examples=["Where is my order?"],
+    )
+    
     @field_validator("message")
     @classmethod
     def message_must_not_be_blank(cls, value: str) -> str:
