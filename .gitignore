@@ -1,12 +1,19 @@
 # Secrets and local environment files
 .env
 .env.*
+*.env
+*.env.*
 !.env.example
+!*.env.example
 backend/.env
 backend/.env.*
+backend/.env.local
+backend/.env.*.local
 !backend/.env.example
 frontend/.env
 frontend/.env.*
+frontend/.env.local
+frontend/.env.*.local
 !frontend/.env.example
 
 # Python virtual environments and caches

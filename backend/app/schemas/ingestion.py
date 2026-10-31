@@ -14,13 +14,29 @@ Intent = Literal[
 RiskProfile = Literal["low", "medium", "high", "unknown"]
 Priority = Literal["low", "medium", "high"]
 
-class ChatMessage(BaseModel):
+
+class ChatTurn(BaseModel):
+    """One earlier message, sent by the browser in incognito mode (the server stores nothing)."""
+
+    model_config = ConfigDict(extra="forbid")
+
     role: Literal["user", "assistant"]
-    content: str = Field(min_length=1, max_length=5000)
+    content: str = Field(min_length=1, max_length=20000)
 
 
 class IngestionRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
+
+    incognito: bool = Field(
+        default=False,
+        description="If true, nothing is saved to the database for this message.",
+    )
+
+    history: list[ChatTurn] = Field(
+        default_factory=list,
+        max_length=12,
+        description="Incognito only: the recent messages, since the server keeps none.",
+    )
 
     session_id:str | None =Field(
         default=None,
@@ -35,13 +51,27 @@ class IngestionRequest(BaseModel):
         description="The user's original message.",
         examples=["Where is my order?"],
     )
-    
+
     @field_validator("message")
     @classmethod
     def message_must_not_be_blank(cls, value: str) -> str:
         value = value.strip()
         if not value:
             raise ValueError("Message cannot contain only whitespace.")
+        return value
+
+
+class RenameRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    title: str = Field(min_length=1, max_length=100)
+
+    @field_validator("title")
+    @classmethod
+    def title_must_not_be_blank(cls, value: str) -> str:
+        value = " ".join(value.split())
+        if not value:
+            raise ValueError("Title cannot be empty.")
         return value
 
 
